@@ -1,15 +1,13 @@
-FROM runpod/base:0.4.0-py3.11
+FROM python:3.11-slim-bullseye
 
-RUN apt-get update && \
+RUN apt-get update -y && \
     apt-get install -y ffmpeg git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN git clone https://github.com/aitechstudioofficial-create/youtube-empire-runpod /app
 
-COPY handler.py .
+RUN pip install runpod==1.7.3
 
-CMD ["python", "-u", "handler.py"]
+CMD ["python", "-u", "/app/handler.py"]
