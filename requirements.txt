@@ -1,2 +1,1 @@
-runpod
-ffmpeg-python
+runpod==1.7.3
