@@ -1,3 +1,4 @@
+# v2 - fixed path
 import runpod
 import os
 import random
