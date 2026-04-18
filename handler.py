@@ -1,4 +1,4 @@
-# v3 - S3 upload fix
+# v4 - dual path support
 import runpod
 import os
 import random
@@ -11,9 +11,9 @@ LOOPS_DIR   = "/runpod-volume/music/loops"
 OUTPUT_DIR  = "/runpod-volume/outputs"
 
 # S3 Configuration
-S3_ENDPOINT  = "https://s3api-us-nc-1.runpod.io"
-S3_BUCKET    = "7v3iptl9ep"
-S3_REGION    = "us-nc-1"
+S3_ENDPOINT   = "https://s3api-us-nc-1.runpod.io"
+S3_BUCKET     = "7v3iptl9ep"
+S3_REGION     = "us-nc-1"
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
 
@@ -40,10 +40,13 @@ def handler(job):
         duration   = int(input_data.get("duration", 60))
         job_id     = job.get("id", "test")
 
+        # Try new path first, fall back to old PRE path
         track_folder = os.path.join(TRACKS_BASE, frequency)
+        if not os.path.exists(track_folder):
+            track_folder = os.path.join(TRACKS_BASE, f"PRE {frequency}")
 
         if not os.path.exists(track_folder):
-            return {"error": f"Not found: {track_folder}"}
+            return {"error": f"Track folder not found: {frequency}"}
 
         tracks = [f for f in os.listdir(track_folder) if f.endswith(".mp3")]
         if not tracks:
