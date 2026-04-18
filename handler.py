@@ -1,14 +1,36 @@
-# v2 - fixed path
 import runpod
 import os
 import random
 import subprocess
+import boto3
+from botocore.client import Config
 
 TRACKS_BASE = "/runpod-volume/music/tracks"
 LOOPS_DIR   = "/runpod-volume/music/loops"
 OUTPUT_DIR  = "/runpod-volume/outputs"
 
+# S3 Configuration
+S3_ENDPOINT  = "https://s3api-us-nc-1.runpod.io"
+S3_BUCKET    = "7v3iptl9ep"
+S3_REGION    = "us-nc-1"
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def upload_to_s3(file_path, file_name):
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=S3_ENDPOINT,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        region_name=S3_REGION,
+        config=Config(signature_version="s3v4")
+    )
+    s3_key = f"outputs/{file_name}"
+    s3.upload_file(file_path, S3_BUCKET, s3_key)
+    url = f"{S3_ENDPOINT}/{S3_BUCKET}/{s3_key}"
+    return url
 
 def handler(job):
     try:
@@ -35,6 +57,7 @@ def handler(job):
         loop_file = os.path.join(LOOPS_DIR, random.choice(loops))
 
         output_file = os.path.join(OUTPUT_DIR, f"rms_{frequency}hz_{duration}sec_{job_id}.mp4")
+        file_name   = f"rms_{frequency}hz_{duration}sec_{job_id}.mp4"
 
         cmd = [
             "ffmpeg", "-y",
@@ -56,9 +79,13 @@ def handler(job):
         if result.returncode != 0:
             return {"error": result.stderr[-500:]}
 
+        # Upload to S3
+        s3_url = upload_to_s3(output_file, file_name)
+
         return {
             "status": "success",
             "output_file": output_file,
+            "s3_url": s3_url,
             "track_used": os.path.basename(track_file),
             "loop_used": os.path.basename(loop_file),
             "frequency": frequency,
