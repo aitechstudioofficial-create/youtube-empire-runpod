@@ -17,9 +17,8 @@ def handler(job):
         duration   = int(input_data.get("duration", 60))
         job_id     = job.get("id", "test")
 
-        # Correct path — no "PRE" prefix!
         track_folder = os.path.join(TRACKS_BASE, frequency)
-        
+
         if not os.path.exists(track_folder):
             return {"error": f"Not found: {track_folder}"}
 
@@ -34,6 +33,7 @@ def handler(job):
             return {"error": "No loops found"}
 
         loop_file = os.path.join(LOOPS_DIR, random.choice(loops))
+
         output_file = os.path.join(OUTPUT_DIR, f"rms_{frequency}hz_{duration}sec_{job_id}.mp4")
 
         cmd = [
